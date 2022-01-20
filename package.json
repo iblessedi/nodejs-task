@@ -1,0 +1,35 @@
+{
+  "name": "nodejs-task",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "start": "nodemon ./bin/www",
+    "test": "mocha --timeout=80000"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iblessedi/nodejs-task.git"
+  },
+  "author": "Volodymyr Labo",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/iblessedi/nodejs-task/issues"
+  },
+  "homepage": "https://github.com/iblessedi/nodejs-task#readme",
+  "dependencies": {
+    "axios": "^0.25.0",
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "express": "~4.16.1",
+    "http-errors": "~1.6.3",
+    "jade": "~1.11.0",
+    "morgan": "~1.9.1",
+    "nodemon": "^2.0.15"
+  },
+  "devDependencies": {
+    "mocha": "^9.1.4",
+    "nock": "^13.2.2",
+    "supertest": "^6.2.2",
+    "@faker-js/faker": "^6.0.0-alpha.3"
+  }
+}

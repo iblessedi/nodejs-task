@@ -1,0 +1,52 @@
+{
+  "1": {
+    "name": "Heinz",
+    "id": "1",
+    "price": "100"
+  },
+  "2": {
+    "name": "Heineken",
+    "id": "2",
+    "price": "200"
+  },
+  "3": {
+    "name": "Coca Cola",
+    "id": "3",
+    "price": "300"
+  },
+  "4": {
+    "name": "Pepsi",
+    "id": "4",
+    "price": "400"
+  },
+  "5": {
+    "name": "Adidas",
+    "id": "5",
+    "price": "500"
+  },
+  "6": {
+    "name": "Nike",
+    "id": "6",
+    "price": "600"
+  },
+  "7": {
+    "name": "Apple",
+    "id": "7",
+    "price": "700"
+  },
+  "8": {
+    "name": "Samsung",
+    "id": "8",
+    "price": "800"
+  },
+  "9": {
+    "name": "OnePlus",
+    "id": "9",
+    "price": "900"
+  },
+  "10": {
+    "name": "Broil King",
+    "id": "10",
+    "price": "1000"
+  }
+}
