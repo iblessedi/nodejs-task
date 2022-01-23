@@ -4,28 +4,61 @@ const http = require('http');
 const nock = require('nock');
 const fs = require('fs');
 const faker = require('@faker-js/faker');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const appFnc = require('../app');
 
 let app;
 let server;
+const largeFileName = './data/5gb-data.json'
+const numberOfDataItemsIn5Gb = 50500; // this is enough to generate 5GB file
+
+const generateLargeFile = async () => {
+  try {
+    let i, item;
+    const response = await fetch('https://en.wikipedia.org/wiki/WalkMe');
+    const bigTextResponse = await response.text();
+    const bigText = JSON.stringify(await bigTextResponse.replace(/[\n"\&\r\t\b\f]/g, '\\$&'));
+    console.log('Generating data for large test file. Please, be patient...')
+    const stream = fs.createWriteStream(largeFileName, { flags: 'w' });
+    stream.write('{');
+    for (i = 0; i < numberOfDataItemsIn5Gb; i++) {
+      const age = Math.floor(Math.random() * 99);
+      item = `"id${i + 1}": {"name": "${escape(faker.name.firstName())} ${escape(faker.name.lastName())}", "id": "${i + 1}", "age": "${age}", "text": ${bigText}}`;
+      item += i < numberOfDataItemsIn5Gb - 1 ? ',' : '';
+      stream.write(item);
+    }
+    stream.write('}');
+    stream.close();
+    return new Promise(resolve => stream.on('finish', () => resolve()));
+  } catch (e) {
+    console.log('Error while generating large file', e);
+    assert.fail('Couldn\'t generate large file');
+  }
+};
+
+const removeLargeFile = () => {
+  fs.unlinkSync(largeFileName);
+};
 
 describe('app tests', () => {
   before(async () => {
     try {
+      await generateLargeFile();
       app = await appFnc(); // we need to launch server, because we use it for external requests while testing
-      server = http.createServer(app);
+      server = await http.createServer(app);
       server.listen(3000);
     } catch (e) {
       console.log('Error while launching web server', e);
-      assert.fail('Couldn\'t start server');
+      assert.fail('Couldn\'t prepare tests for start');
     }
   });
   after(() => {
     try {
       server.close();
+      removeLargeFile();
     } catch (e) {
       console.log('Error while closing web server', e);
-      assert.fail('Couldn\'t stop server');
+      assert.fail('Couldn\'t do the cleanup job');
     }
   });
 
@@ -113,7 +146,7 @@ describe('app tests', () => {
         .end(done);
     });
 
-    it('fetching 1 customer, 2 external links, all aresuccessful', (done) => {
+    it('fetching 1 customer, 2 external links, all are successful', (done) => {
       request(app)
         .get('/multiple?bob=/customers/1&google=https://google.com&facebook=https://facebook.com')
         .expect(200)
@@ -133,19 +166,40 @@ describe('app tests', () => {
         .expect((response) => {
           assert(Object.keys(response.body).length === 2);
           assert(response.body.google.data.length > 5000);
-          assert(response.body.badone.error.response === 'getaddrinfo ENOTFOUND notexisten.com');
+          assert(response.body.badone.error.response === 'request to https://notexisten.com/ failed, reason: getaddrinfo ENOTFOUND notexisten.com');
         })
         .end(done)
     });
 
+    it('running test with 5gb+ sub response', async () => {
+      let pageUrl = 'http://localhost:3000/multiple?bob=/customers/1&large=/5gb-file';
+      try {
+        const resultFile = './data/result.json';
+        const urlResult = await fetch(pageUrl);
+        const stream = fs.createWriteStream(resultFile, { flags: 'w' });
+        for await (const chunk of urlResult.body) {
+          stream.write(chunk);
+        }
+        stream.close();
+        await new Promise(resolve => stream.on('finish', () => resolve()));
+        assert(urlResult.status === 200);
+        const fileStats = fs.statSync(resultFile);
+        assert(fileStats.size > 8 * 1024 * 1024 * 5);
+        fs.unlinkSync(resultFile);
+      } catch (e) {
+        console.log('Couldn\'t fetch 5 gb of data', e);
+        assert.fail('Couldn\'t fetch 5gb of data');
+      }
+    });
+
     it('simulating local server is not responding', (done) => {
-      // we set 5000 timeout for axios, so it will drop connection before the server responds
-      nock('http://localhost:3000').get('/customers/1').delayConnection(6000).reply(500);
+      const errorMessage = 'Server error';
+      nock('http://localhost:3000').get('/customers/1').reply(500, errorMessage);
       request(app)
         .get('/multiple?bob=/customers/1&google=https://google.com')
         .expect(200)
         .expect((response) => {
-          assert(response.body.bob.error.response.message === 'timeout of 5000ms exceeded');
+          assert(response.body.bob.error.response.message === errorMessage);
           assert(response.body.google.data.length > 5000);
         })
         .end(done);
