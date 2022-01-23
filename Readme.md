@@ -36,5 +36,6 @@ Tips: Try to build a working solution first and optimize it later, if possible. 
 
 #To run the app do:
 - npn run start
+
 #To run the tests do:
 - npm run test
