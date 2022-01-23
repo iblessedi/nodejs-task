@@ -1,4 +1,4 @@
-![how-it-works](https://github.com/iblessedi/nodejs-task/blob/master/public/result.png?raw=true)
+![how-it-works](https://github.com/iblessedi/nodejs-task/blob/master/public/images/result.png?raw=true)
 
 #Requirements for this task:
 
