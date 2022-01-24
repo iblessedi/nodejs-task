@@ -18,7 +18,7 @@ const generateLargeFile = async () => {
     const response = await fetch('https://en.wikipedia.org/wiki/WalkMe');
     const bigTextResponse = await response.text();
     const bigText = JSON.stringify(await bigTextResponse.replace(/[\n"\&\r\t\b\f]/g, '\\$&'));
-    console.log('Generating data for large test file. Please, be patient...')
+    console.log('Generating data for large test file. Please, be patient...');
     const stream = fs.createWriteStream(largeFileName, { flags: 'w' });
     stream.write('{');
     for (i = 0; i < numberOfDataItemsIn5Gb; i++) {
