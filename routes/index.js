@@ -29,45 +29,43 @@ router.get('/multiple', async function (req, res) {
   res.setHeader('Content-Type', 'application/json');
   res.write('{');
   let firstResultWasAdded = false;
-  const urlsToProcess = Object.entries(req.query);
+  const urlsToProcess = Object.entries(req.query).filter(entry => entry[0] && entry[1]);
   for await (const entry of urlsToProcess) {
     try {
-      if (entry[0] && entry[1]) {
-        const isInternalCall = entry[1].match(/^\//);
-        const urlToFetch = isInternalCall ? `http://localhost:3000${entry[1]}` : entry[1]; // let's check if that's internal or external url
-        let urlResult;
-        try {
-          urlResult = await fetch(urlToFetch);
-        } catch (e) {
-          const errorResponse = {
-            error: {
-              status: null,
-              response: e.message,
-            }
+      const isInternalCall = entry[1].match(/^\//);
+      const urlToFetch = isInternalCall ? `http://localhost:3000${entry[1]}` : entry[1]; // let's check if that's internal or external url
+      let urlResult;
+      try {
+        urlResult = await fetch(urlToFetch);
+      } catch (e) {
+        const errorResponse = {
+          error: {
+            status: null,
+            response: e.message,
           }
-          res.write(`${firstResultWasAdded ? ',' : ''}"${entry[0]}":${JSON.stringify(errorResponse)}`);
-          firstResultWasAdded = true;
-          continue;
         }
-        if (urlResult.status === 200) {
-          res.write(`${firstResultWasAdded ? ',' : ''}"${entry[0]}":{"data":${isInternalCall ? '' : '"'}`);
-          for await (const chunk of urlResult.body) {
-            res.write(isInternalCall ? chunk.toString() : chunk.toString().replace(/\r?\n|\r|\\/g, '').replace(/"/g, /\"/));
-          }
-          res.write(`${isInternalCall ? '' : '"'}}`);
-        } else {
-          const errorResponse = {
-            error: {
-              status: urlResult.status,
-              response: {
-                message: await urlResult.text(),
-              }
-            }
-          }
-          res.write(`${firstResultWasAdded ? ',' : ''}"${entry[0]}":${JSON.stringify(errorResponse)}`);
-        }
+        res.write(`${firstResultWasAdded ? ',' : ''}"${entry[0]}":${JSON.stringify(errorResponse)}`);
         firstResultWasAdded = true;
+        continue;
       }
+      if (urlResult.status === 200) {
+        res.write(`${firstResultWasAdded ? ',' : ''}"${entry[0]}":{"data":${isInternalCall ? '' : '"'}`);
+        for await (const chunk of urlResult.body) {
+          res.write(isInternalCall ? chunk.toString() : chunk.toString().replace(/\r?\n|\r|\\/g, '').replace(/"/g, /\"/));
+        }
+        res.write(`${isInternalCall ? '' : '"'}}`);
+      } else {
+        const errorResponse = {
+          error: {
+            status: urlResult.status,
+            response: {
+              message: await urlResult.text(),
+            }
+          }
+        }
+        res.write(`${firstResultWasAdded ? ',' : ''}"${entry[0]}":${JSON.stringify(errorResponse)}`);
+      }
+      firstResultWasAdded = true;
     } catch (e) {
       console.log('An error occurred while processing /multiple entry', entry);
     }
