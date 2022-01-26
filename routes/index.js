@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const fs = require('fs');
+const { pipeline } = require('stream');
 
 const customers = require('../data/customers.json');
 const products = require('../data/products.json');
@@ -77,7 +78,12 @@ router.get('/multiple', async function (req, res) {
 router.get('/5gb-file', function(req, res, next) {
   const fileStream = fs.createReadStream('./data/5gb-data.json');
   res.setHeader('Content-Type', 'application/json');
-  fileStream.pipe(res);
+  pipeline(fileStream, res, (err) => {
+    if (err) {
+      console.log('An error occurred while piping 5gb file', err);
+      return res.status(500).send('500 - Internal Error Occurred');
+    }
+  });
 });
 
 module.exports = router;
